@@ -1,6 +1,6 @@
 import numpy as np
 from filterpy.kalman import KalmanFilter as kalmanfilter
-
+from filterpy.common import Q_discrete_white_noise
 
 CAR_LENGTH = 40
 CAR_WIDTH = 20
@@ -19,7 +19,33 @@ class KalmanFilter:
         self.car = car
 
         # BEGIN_YOUR_CODE ######################################################
-        raise NotImplementedError
+
+        #State transition matrix
+        self.kf.F = np.array([[1., 0, 1., 0], 
+                               [0, 1., 0, 1.],
+                               [0, 0, 1., 0],
+                               [0, 0, 0, 1.]])
+
+        #Measurement matrix
+        self.kf.H = np.array([[1, 0, 0, 0],
+                              [0, 1, 0, 0]])
+        
+        #Measurement noise covariance
+        self.kf.R = np.diag([self.variance, self.variance])
+
+        #Process noise covariance
+        #Q_discrete_white_noise is like actually cancer the blue line never fully adjusts no matter what parameters
+        #I try to set for this :(((((( and this took so long to debug I'm gonna go reconnect with nature now. Hopefully np.eye is acceptable.
+        self.kf.Q = np.eye(4) * 0.1
+
+        #Initial state estimate
+        self.kf.x = np.array([self.car.pos[0], 
+                              self.car.pos[1], 
+                              self.car.vel[0], 
+                              self.car.vel[1]])
+
+        #Initial covariance matrix - We're already given the car's initial settings
+        self.kf.P = np.diag([1.0, 1.0, 1.0, 1.0])
 
         # END_YOUR_CODE ########################################################
 
@@ -33,8 +59,13 @@ class KalmanFilter:
         # Prediction step
         
         # BEGIN_YOUR_CODE ######################################################
-        raise NotImplementedError
-        
+
+        self.check_collision(other_car)
+        self.kf.x[2] = self.car.vel[0]
+        self.kf.x[3] = self.car.vel[1]
+        self.kf.predict()
+        self.kf.update(measurement)
+
         # END_YOUR_CODE ########################################################
 
         return self.kf.x
